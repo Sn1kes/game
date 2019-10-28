@@ -1,0 +1,12 @@
+*.exe
+build_gcc/log.txt
+build_gcc/log_error.txt
+build_llvm/log.txt
+build_llvm/log_error.txt
+*.d
+*.s
+*.cso
+*.h.gch
+*.h.pch
+*.sublime-project
+*.sublime-workspace
