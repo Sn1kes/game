@@ -2,7 +2,7 @@
 My first attempts at writing 3d game on C language from scratch.
 # Requirements
 * Windows 7 or higher.
-* Processor that supports SSE instructions.
+* Amd64 processor that supports SSE instructions.
 * Graphics adapter, that supports directx 11 with feature level 10.0 and WDDM 1.0.
 # Build
 In order to build the project you will need:
