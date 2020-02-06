@@ -5,8 +5,12 @@ build_llvm/log.txt
 build_llvm/log_error.txt
 *.d
 *.s
+*.asm
 *.cso
 *.h.gch
 *.h.pch
+*.h.mspch
 *.sublime-project
 *.sublime-workspace
+*log*
+*.pdb
