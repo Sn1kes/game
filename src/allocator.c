@@ -1,10 +1,10 @@
 //Written once at startup
 struct {
     size_t MAX_SPACE_SIZE;
-    unsigned char *STATE_SPACE;
-    unsigned char *FRAME_SPACE;
-    unsigned char *THREAD_SPACE;
-    unsigned char *STRING_SPACE;
+    void *STATE_SPACE;
+    void *FRAME_SPACE;
+    void *THREAD_SPACE;
+    void *STRING_SPACE;
 } static ALLOCATOR_CONSTANTS;
 
 struct Allocator {

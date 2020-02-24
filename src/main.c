@@ -15,12 +15,12 @@ struct State_Desc {
         uint32_t width;
         uint32_t height;
     } window_coords;
-    float sensitivity;
+    int16_t sensitivity;
     ID3D11RasterizerState *raster_cull_back;
     ID3D11VertexShader *vertex_shader;
     ID3D11PixelShader *pixel_shader;
     ID3D11InputLayout *input_layout;
-    int16_t scroll;
+    float scroll;
     uint16_t status_flags;
     unsigned char pad1[12];
     //64
@@ -50,7 +50,7 @@ struct Render_desc {
     float3 camera_w;               //
     float camera_speed;
 
-    float world_matrix[4][4];
+    float3 scale_vector;
     float wvp_matrix[4][4];
 };
 
@@ -96,6 +96,7 @@ static void window_resize_buffers(struct State_Desc *const restrict state_desc, 
             ASSERT_POSIX(ID3D11Device_CreateRenderTargetView(device, res, 0, &new_render_target_view));
             ID3D11Resource_Release(res);
         }
+
         ID3D11Texture2D_Release(back_buffer);
     }
 
@@ -142,7 +143,7 @@ static void window_resize_buffers(struct State_Desc *const restrict state_desc, 
 
 static LRESULT CALLBACK wnd_proc(HWND main_hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    struct State_Desc *const restrict state_desc = (void *)ALLOCATOR_CONSTANTS.STATE_SPACE;
+    struct State_Desc *const restrict state_desc = ALLOCATOR_CONSTANTS.STATE_SPACE;
     
     switch(msg) {
         case WM_CLOSE: {
@@ -267,7 +268,7 @@ static LRESULT CALLBACK wheel_proc(_In_ const int nCode, _In_ const WPARAM wPara
         return CallNextHookEx(NULL, nCode, wParam, lParam);
     if(wParam == WM_MOUSEWHEEL) {
         MOUSEHOOKSTRUCTEX *const restrict mouse_info = (MOUSEHOOKSTRUCTEX *)lParam;
-        struct State_Desc *const restrict state_desc = (void *)ALLOCATOR_CONSTANTS.STATE_SPACE;
+        struct State_Desc *const restrict state_desc = ALLOCATOR_CONSTANTS.STATE_SPACE;
         const int16_t state_scroll = state_desc->scroll;
         const int16_t val = -(int16_t)HIWORD(mouse_info->mouseData);
         const int16_t scroll = state_scroll + val;
@@ -340,25 +341,9 @@ int WINAPI wWinMain(_In_ const HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInst
     render_desc->camera_lookat.b = 0.f;
     render_desc->camera_lookat.c = 1.f;
 
-    render_desc->world_matrix[0][0] = 10.f;
-    render_desc->world_matrix[0][1] = 0.f;
-    render_desc->world_matrix[0][2] = 0.f;
-    render_desc->world_matrix[0][3] = 0.f;
-
-    render_desc->world_matrix[1][0] = 0.f;
-    render_desc->world_matrix[1][1] = 10.f;
-    render_desc->world_matrix[1][2] = 0.f;
-    render_desc->world_matrix[1][3] = 0.f;
-
-    render_desc->world_matrix[2][0] = 0.f;
-    render_desc->world_matrix[2][1] = 0.f;
-    render_desc->world_matrix[2][2] = 10.f;
-    render_desc->world_matrix[2][3] = 0.f;
-
-    render_desc->world_matrix[3][0] = 0.f;
-    render_desc->world_matrix[3][1] = 0.f;
-    render_desc->world_matrix[3][2] = 0.f;
-    render_desc->world_matrix[3][3] = 1.f;
+    render_desc->scale_vector.a = 10.f;
+    render_desc->scale_vector.b = 10.f;
+    render_desc->scale_vector.c = 10.f;
 
     {
         ID3D11Device *device;
@@ -539,8 +524,9 @@ int WINAPI wWinMain(_In_ const HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInst
         ID3D11Buffer *constants_buf;
 
         {
+            unsigned char *const wvp_matrix_adr = (void *)render_desc->wvp_matrix;
             const D3D11_BUFFER_DESC constants_buf_desc = {
-                .ByteWidth = sizeof(render_desc->wvp_matrix),
+                .ByteWidth = sizeof(float [4][4]),
                 .Usage = D3D11_USAGE_DYNAMIC,
                 .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
                 .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -589,7 +575,7 @@ int WINAPI wWinMain(_In_ const HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInst
         ID3D11DeviceContext_IASetPrimitiveTopology(device_context, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
         state_desc->sensitivity = 0.001f;
-        state_desc->scroll = 1000;
+        state_desc->scroll = 1000.f;
         state_desc->status_flags = 0;
         state_desc->raster_cull_back = raster_cull_back;
         state_desc->vertex_shader = vertex_shader;
@@ -858,8 +844,8 @@ int WINAPI wWinMain(_In_ const HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInst
                 (float)state_desc->window_coords.width / (float)state_desc->window_coords.height, 0.1f, 1000.f);
             
             float ALIGN(64) wv_matrix[4][4];
-            matrix4x4_multiply(wv_matrix, render_desc->world_matrix, view_matrix);
-            matrix4x4_multiply(wvp_matrix, wv_matrix, projection_matrix);
+            matrix4x4_vector4_mul(wv_matrix, render_desc->world_matrix, view_matrix);
+            matrix4x4_mul(wvp_matrix, wv_matrix, projection_matrix);
         }
 
         double time_end;
