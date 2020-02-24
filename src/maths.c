@@ -21,19 +21,19 @@ typedef struct float4 {
 } float4;
 
 typedef struct hva3 {
-	__m128 a;
-	__m128 b;
-	__m128 c;
+	__m128 x;
+	__m128 y;
+	__m128 z;
 } hva3;
 
 typedef struct hva4 {
-	__m128 a;
-	__m128 b;
-	__m128 c;
-	__m128 d;
+	__m128 x;
+	__m128 y;
+	__m128 z;
+	__m128 w;
 } hva4;
 
-__vectorcall static void matrix4x4_mul(float out[static restrict 4][4], const float mat1[static restrict 4][4], 
+__vectorcall static void matrix4x4_multiply(float out[static restrict 4][4], const float mat1[static restrict 4][4], 
 	const float mat2[static restrict 4][4])
 {
 	const __m128 a11 = _mm_set1_ps(mat1[0][0]);
@@ -99,12 +99,7 @@ __vectorcall static void matrix4x4_mul(float out[static restrict 4][4], const fl
 	_mm_store_ps(out[3], df4);
 }
 
-__vectorcall static __m128 matrix4x4_vector4_mul(const hva4 mat, const __m128 vec)
-{
-
-}
-
-__vectorcall static hva4 matrix4x4_transpose(const hva4 in)
+__vectorcall static hva4 matrix4x4_transpose(hva4 in)
 {
 	const __m128 t1 = _mm_unpacklo_ps(in.x, in.z);
 	const __m128 t2 = _mm_unpackhi_ps(in.x, in.z);
@@ -117,10 +112,10 @@ __vectorcall static hva4 matrix4x4_transpose(const hva4 in)
 	const __m128 o4 = _mm_unpackhi_ps(t2, t4);
 	
 	const hva4 out = {
-		.a = o1,
-		.b = o2,
-		.c = o3,
-		.d = o4
+		.x = o1,
+		.y = o2,
+		.z = o3,
+		.w = o4
 	};
 
 	return out;
@@ -136,38 +131,6 @@ __vectorcall static float3 vector3_normal(const float3 vec)
 __vectorcall static float vector3_dot(const float3 vec1, const float3 vec2)
 {
 	return vec1.a * vec2.a + vec1.b * vec2.b + vec1.c * vec2.c;
-}
-
-__vectorcall static float vector4_dot(const float4 vec1, const float4 vec2)
-{
-	return vec1.a * vec2.a + vec1.b * vec2.b + vec1.c * vec2.c + vec1.d * vec2.d;
-}
-
-__vectorcall static __m128 vector3_dot_4n(__m128 *out, hva3 *const restrict vec1, 
-	hva3 *const restrict vec2, const uint32_t n)
-{
-	for(int i = 0; i < n; ++i)
-	const __m128 o1 = _mm_mul_ps(vec1.a, vec2.a);
-	const __m128 o2 = _mm_mul_ps(vec1.b, vec2.b);
-	const __m128 o3 = _mm_mul_ps(vec1.c, vec2.c);
-	const __m128 o4 = _mm_add_ps(o1, o2);
-	const __m128 out = _mm_add_ps(o4, o3);
-}
-
-__vectorcall static __m128 vector4_dot_4n(__m128 *out, hva4 *const restrict vec1, 
-	hva4 *const restrict vec2, const uint32_t n)
-{
-	for(int i = 0; i < n; ++i) {
-		const hva4 vec1_i = vec1[i];
-		const hva4 vec2_i = vec2[i];
-		const __m128 o1 = _mm_mul_ps(vec1.a, vec2.a);
-		const __m128 o2 = _mm_mul_ps(vec1.b, vec2.b);
-		const __m128 o3 = _mm_mul_ps(vec1.c, vec2.c);
-		const __m128 o4 = _mm_mul_ps(vec1.d, vec2.d);
-		const __m128 o5 = _mm_add_ps(o1, o2);
-		const __m128 o6 = _mm_add_ps(o3, o4);
-		const __m128 out = _mm_add_ps(o5, o6);
-	}
 }
 
 __vectorcall static float3 vector3_add(const float3 vec1, const float3 vec2)
@@ -207,7 +170,7 @@ __vectorcall static float3 vector3_cross(const float3 vec1, const float3 vec2)
 	out[3][0] = -vector3_dot(line->xx, camera);   out[3][1] = -vector3_dot(line->yy, camera); out[3][2] = -vector3_dot(line->zz, camera); out[3][3] = 1;
 }*/
 
-__vectorcall static inline void matrix_projection_LH(float out[static restrict 4][4], const float fovy, 
+__vectorcall static void matrix_projection_LH(float out[static restrict 4][4], const float fovy, 
 	const float aspect, const float zn, const float zf)
 {
 	ASSERT(fovy > 0.f);

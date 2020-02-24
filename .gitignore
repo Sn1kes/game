@@ -14,9 +14,3 @@ build_llvm/log_error.txt
 *.sublime-workspace
 *log*
 *.pdb
-*.pch
-*.dump
-*.vs
-*.filters
-*.user
-*.ClangTidy
